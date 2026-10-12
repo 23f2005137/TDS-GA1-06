@@ -59,21 +59,24 @@ def load_config() -> dict[str, Any]:
 
     env_name = os.getenv("APP_ENV", "development")
     yaml_path = BASE_DIR / f"config.{env_name}.yaml"
+
     if yaml_path.exists():
         with yaml_path.open("r", encoding="utf-8") as file:
             yaml_layer = yaml.safe_load(file) or {}
         apply_layer(config, yaml_layer)
 
-    dotenv_layer = dotenv_values(BASE_DIR / ".env")
+    dotenv_path = BASE_DIR / ".env"
+    dotenv_layer = dotenv_values(dotenv_path) if dotenv_path.exists() else {}
     apply_layer(config, dotenv_layer)
 
-    # OS environment variables override .env; APP_ENV selects the YAML file
-    # and is not itself an application config field.
+    # OS environment variables override .env
     os_layer = {
-        key: value for key, value in os.environ.items()
+        key: value
+        for key, value in os.environ.items()
         if key.startswith("APP_") and key != "APP_ENV"
     }
     apply_layer(config, os_layer)
+
     return config
 
 
